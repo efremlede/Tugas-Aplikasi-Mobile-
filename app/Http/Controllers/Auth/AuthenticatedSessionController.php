@@ -12,7 +12,7 @@ use Illuminate\View\View;
 class AuthenticatedSessionController extends Controller
 {
     /**
-     * Menampilkan halaman login.
+     * Tampilkan halaman login.
      */
     public function create(): View
     {
@@ -20,7 +20,7 @@ class AuthenticatedSessionController extends Controller
     }
 
     /**
-     * Menangani proses autentikasi/login.
+     * Proses autentikasi login.
      */
     public function store(LoginRequest $request): RedirectResponse
     {
@@ -28,11 +28,12 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerate();
 
-        return redirect()->intended('/dashboard');
+        // Mengarahkan ke halaman dashboard setelah berhasil login
+        return redirect()->intended(route('dashboard'));
     }
 
     /**
-     * Menangani proses logout.
+     * Proses logout.
      */
     public function destroy(Request $request): RedirectResponse
     {
@@ -42,6 +43,6 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerateToken();
 
-        return redirect('/login');
+        return redirect('/');
     }
 }

@@ -3,70 +3,62 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
-use App\Models\Product;
+use Illuminate\Support\Facades\DB;
 
 class ProductSeeder extends Seeder
 {
     public function run(): void
     {
-        Product::create([
-            'name' => 'Semen Kupang 40 kg',
-            'brand' => 'Semen Kupang',
-            'weight' => 40,
-            'price' => 65000,
-            'stock' => 100,
-            'description' => 'Semen berkualitas untuk berbagai kebutuhan pembangunan.',
-            'image' => null,
-        ]);
+        $products = [
+            [
+                'name' => 'semen Kupang 40 kg',
+                'category' => 'Semen',
+                'price' => 65000,
+                'stock' => 50,
+                'image' => 'semen-kupang.jpg',
+            ],
+            [
+                'name' => 'Semen Tiga Roda 50kg',
+                'category' => 'Semen',
+                'price' => 84971,
+                'stock' => 50,
+                'image' => 'tiga-roda.jpg',
+            ],
+            [
+                'name' => 'Dynamix 50 kg',
+                'category' => 'Semen',
+                'price' => 65000,
+                'stock' => 18,
+                'image' => 'dynamix.jpg',
+            ],
+            [
+                'name' => 'Semen Padang 40 kg',
+                'category' => 'Semen',
+                'price' => 55000,
+                'stock' => 50,
+                'image' => 'semen-padang.jpg',
+            ],
+            [
+                'name' => 'Semen Putih Tiga Roda 40 kg',
+                'category' => 'Semen',
+                'price' => 100000,
+                'stock' => 46,
+                'image' => 'semen-putih.jpg',
+            ],
+        ];
 
-        Product::create([
-            'name' => 'Semen Kupang 50 kg',
-            'brand' => 'Semen Kupang',
-            'weight' => 50,
-            'price' => 80000,
-            'stock' => 80,
-            'description' => 'Semen berkualitas dengan kemasan 50 kg.',
-            'image' => null,
-        ]);
-
-        Product::create([
-            'name' => 'Semen Tiga Roda 40 kg',
-            'brand' => 'Tiga Roda',
-            'weight' => 40,
-            'price' => 70000,
-            'stock' => 100,
-            'description' => 'Semen Tiga Roda untuk kebutuhan konstruksi.',
-            'image' => null,
-        ]);
-
-        Product::create([
-            'name' => 'Semen Tiga Roda 50 kg',
-            'brand' => 'Tiga Roda',
-            'weight' => 50,
-            'price' => 85000,
-            'stock' => 80,
-            'description' => 'Semen Tiga Roda kemasan 50 kg.',
-            'image' => null,
-        ]);
-
-        Product::create([
-            'name' => 'Semen Tonasa 40 kg',
-            'brand' => 'Tonasa',
-            'weight' => 40,
-            'price' => 68000,
-            'stock' => 90,
-            'description' => 'Semen Tonasa untuk pembangunan rumah dan bangunan.',
-            'image' => null,
-        ]);
-
-        Product::create([
-            'name' => 'Semen Tonasa 50 kg',
-            'brand' => 'Tonasa',
-            'weight' => 50,
-            'price' => 83000,
-            'stock' => 70,
-            'description' => 'Semen Tonasa kemasan 50 kg berkualitas.',
-            'image' => null,
-        ]);
+        foreach ($products as $item) {
+            DB::table('products')->updateOrInsert(
+                ['name' => $item['name']],
+                [
+                    'category' => $item['category'],
+                    'price' => $item['price'],
+                    'stock' => $item['stock'],
+                    'image' => $item['image'],
+                    'updated_at' => now(),
+                    'created_at' => now(),
+                ]
+            );
+        }
     }
 }

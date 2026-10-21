@@ -4,21 +4,21 @@ namespace App\Http\Controllers;
 
 use App\Models\Product;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Gate;
 
 class ProductController extends Controller
 {
     /**
-     * Menampilkan daftar seluruh produk.
+     * Menampilkan daftar produk di halaman Admin / Katalog
      */
     public function index()
     {
         $products = Product::all();
+
         return view('products.index', compact('products'));
     }
 
     /**
-     * Menampilkan form untuk membuat produk baru.
+     * Menampilkan halaman form tambah produk.
      */
     public function create()
     {
@@ -26,27 +26,33 @@ class ProductController extends Controller
     }
 
     /**
-     * Menyimpan produk baru ke dalam database.
+     * Simpan produk baru.
      */
     public function store(Request $request)
     {
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'description' => 'required|string',
-            'category' => 'required|string',
-            'price' => 'required|numeric',
-            'stock' => 'required|integer',
-            'status' => 'required|string',
+        $validated = $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'category' => ['required', 'string', 'max:255'],
+            'description' => ['required', 'string'],
+            'price' => ['required', 'numeric', 'min:0'],
+            'stock' => ['required', 'integer', 'min:0'],
+            'status' => ['required', 'in:Aktif,Nonaktif'],
         ]);
 
-        Product::create($request->all());
+        Product::create([
+            'name' => $validated['name'],
+            'category' => $validated['category'],
+            'description' => $validated['description'],
+            'price' => $validated['price'],
+            'stock' => $validated['stock'],
+            'is_active' => $validated['status'] === 'Aktif',
+        ]);
 
-        return redirect()->route('admin.products.index')
-                         ->with('success', 'Produk berhasil ditambahkan.');
+        return redirect()->route('admin.products.index')->with('success', 'Produk berhasil ditambahkan.');
     }
 
     /**
-     * Menampilkan rincian produk tertentu.
+     * Tampilkan detail produk.
      */
     public function show(Product $product)
     {
@@ -54,55 +60,90 @@ class ProductController extends Controller
     }
 
     /**
-     * Menampilkan form untuk mengedit produk.
-     * Menggunakan Gate untuk memeriksa izin otorisasi.
+     * Menampilkan form edit produk.
      */
     public function edit(Product $product)
     {
-        // Pengecekan Otorisasi Menggunakan Gate (Sesuai poin 1b modul)
-        if (Gate::denies('edit-product')) {
-            abort(403, 'Anda tidak memiliki izin untuk mengedit produk ini.');
-        }
-
         return view('products.edit', compact('product'));
     }
 
     /**
-     * Memperbarui data produk di database.
-     * Menggunakan Policy untuk memverifikasi otorisasi.
+     * Update produk.
      */
     public function update(Request $request, Product $product)
     {
-        // Pengecekan Otorisasi Menggunakan Policy (Sesuai poin 2d modul)
-        $this->authorize('update', $product);
-
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'description' => 'required|string',
-            'category' => 'required|string',
-            'price' => 'required|numeric',
-            'stock' => 'required|integer',
-            'status' => 'required|string',
+        $validated = $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'category' => ['required', 'string', 'max:255'],
+            'description' => ['required', 'string'],
+            'price' => ['required', 'numeric', 'min:0'],
+            'stock' => ['required', 'integer', 'min:0'],
+            'status' => ['required', 'in:Aktif,Nonaktif'],
         ]);
 
-        $product->update($request->all());
+        $product->update([
+            'name' => $validated['name'],
+            'category' => $validated['category'],
+            'description' => $validated['description'],
+            'price' => $validated['price'],
+            'stock' => $validated['stock'],
+            'is_active' => $validated['status'] === 'Aktif',
+        ]);
 
-        return redirect()->route('admin.products.index')
-                         ->with('success', 'Data produk berhasil diperbarui.');
+        return redirect()->route('admin.products.index')->with('success', 'Produk berhasil diperbarui.');
     }
 
     /**
-     * Menghapus produk dari database.
-     * Menggunakan Policy untuk memverifikasi otorisasi.
+     * Hapus produk.
      */
     public function destroy(Product $product)
     {
-        // Pengecekan Otorisasi Menggunakan Policy
-        $this->authorize('delete', $product);
-
         $product->delete();
 
-        return redirect()->route('admin.products.index')
-                         ->with('success', 'Produk berhasil dihapus.');
+        return redirect()->route('admin.products.index')->with('success', 'Produk berhasil dihapus.');
+    }
+
+    /**
+     * Menambahkan produk ke Keranjang (Session)
+     */
+    public function addToCart(Request $request)
+    {
+        $productId = $request->input('product_id');
+        $product = Product::findOrFail($productId);
+
+        $cart = session()->get('cart', []);
+
+        if (isset($cart[$productId])) {
+            $cart[$productId]['quantity']++;
+        } else {
+            $cart[$productId] = [
+                'name' => $product->name,
+                'quantity' => 1,
+                'price' => $product->price,
+                'category' => $product->category,
+            ];
+        }
+
+        session()->put('cart', $cart);
+
+        return redirect()->back()->with('success', 'Produk berhasil ditambahkan ke keranjang!');
+    }
+
+    /**
+     * Fitur Beli Sekarang (Langsung mengarahkan ke halaman Checkout)
+     */
+    public function buyNow(Request $request)
+    {
+        $productId = $request->input('product_id');
+        $product = Product::findOrFail($productId);
+
+        session()->put('direct_checkout', [
+            'product_id' => $product->id,
+            'name' => $product->name,
+            'price' => $product->price,
+            'quantity' => 1,
+        ]);
+
+        return redirect()->route('checkout.direct');
     }
 }

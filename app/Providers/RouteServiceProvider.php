@@ -2,37 +2,35 @@
 
 namespace App\Providers;
 
-use Illuminate\Support\ServiceProvider;
+use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Foundation\Support\Providers\RouteServiceProvider as ServiceProvider;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Facades\Route;
 
 class RouteServiceProvider extends ServiceProvider
 {
     /**
-     * Jalur/route default setelah pengguna berhasil login.
+     * Jalur rute default setelah pengguna login.
      */
     public const HOME = '/dashboard';
 
-    public function register(): void
-    {
-        //
-    }
-
+    /**
+     * Bootstrap any application services.
+     */
     public function boot(): void
     {
-        //
+        RateLimiter::for('api', function (Request $request) {
+            return Limit::perMinute(60)->by($request->user()?->id ?: $request->ip());
+        });
+
+        $this->routes(function () {
+            Route::middleware('api')
+                ->prefix('api')
+                ->group(base_path('routes/api.php'));
+
+            Route::middleware('web')
+                ->group(base_path('routes/web.php'));
+        });
     }
 }
-```[cite: 14]
-
-4. Daftarkan file provider tersebut di **`bootstrap/providers.php`** (file yang sedang Anda buka pada gambar)[cite: 17]:
-
-```php
-<?php
-
-use App\Providers\AppServiceProvider;
-use App\Providers\RouteServiceProvider;
-
-return [
-    AppServiceProvider::class,
-    RouteServiceProvider::class, // <-- Tambahkan baris ini
-];
-```[cite: 17]

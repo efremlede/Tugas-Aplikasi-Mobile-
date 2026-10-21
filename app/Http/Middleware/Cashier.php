@@ -13,17 +13,16 @@ class Cashier
      */
     public function handle(Request $request, Closure $next)
     {
-        // Cek apakah user sudah login
-        if (Auth::check()) {
-            // Cek apakah role user adalah 'kasir'
-            if (Auth::user()->role == 'kasir') {
-                return $next($request);
-            } else {
-                // Tampilkan halaman 403 dengan pesan custom
-                abort(403, 'Akses Ditolak! Anda bukan Kasir.');
-            }
+        if (! Auth::check()) {
+            return redirect()->route('login');
         }
 
-        return redirect()->route('login');
+        $userRole = Auth::user()->role ?? Auth::user()->usertype ?? null;
+
+        if ($userRole !== 'kasir') {
+            abort(403, 'Akses Ditolak! Anda bukan Kasir.');
+        }
+
+        return $next($request);
     }
 }

@@ -1,36 +1,47 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use Illuminate\Support\Facades\Auth;
-use App\Http\Controllers\Auth\AuthenticatedSessionController;
+use App\Http\Controllers\PosController;
+use App\Http\Controllers\ProductController;
 
 /*
 |--------------------------------------------------------------------------
-| Web Routes
+| Web Routes - Toko Semen Jaya
 |--------------------------------------------------------------------------
 */
 
-// 1. Rute Halaman Utama & Login
+// Redirect URL utama ke halaman login
 Route::get('/', function () {
-    return view('auth.login');
+    return redirect()->route('login');
 });
 
-Route::get('/login', [AuthenticatedSessionController::class, 'create'])->name('login');
-Route::post('/login', [AuthenticatedSessionController::class, 'store']);
-
-// 2. Rute Logout
-Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])->name('logout');
-
-// 3. Rute Dashboard dengan Pengecekan Manual (Menampilkan Error 403 jika Belum Login)
+// Route Dashboard Utama
 Route::get('/dashboard', function () {
-    if (!Auth::check()) {
-        abort(403, 'THIS ACTION IS UNAUTHORIZED.');
-    }
+    return view('kasir.dashboard');
+})->middleware(['auth'])->name('dashboard');
 
-    return view('admin.dashboard');
-})->name('dashboard');
+// Route Kelompok Admin (Fitur Admin & Halaman Produk)
+Route::name('admin.')->middleware(['auth'])->group(function () {
+    // 1. Fitur Admin Khusus (Panel Pengelolaan Admin)
+    Route::get('/admin/panel', function () {
+        return view('admin.index');
+    })->name('index');
 
-// 4. Rute Halaman Post
-Route::get('/post', function () {
-    return view('post');
+    // 2. Halaman Kelola / Katalog Produk (Resource Route)
+    Route::resource('products', ProductController::class);
 });
+
+// Route Kasir / POS & Keranjang
+Route::get('/cashier', [PosController::class, 'index'])->middleware(['auth'])->name('cashier.index');
+Route::post('/cart/add/{id}', [PosController::class, 'addToCart'])->name('cart.add');
+Route::post('/buy-now/{id}', [PosController::class, 'buyNow'])->name('buy.now');
+Route::get('/cart', [PosController::class, 'cartIndex'])->name('cart.index');
+Route::post('/checkout', [PosController::class, 'checkout'])->name('checkout.process');
+
+// Route Profil Pelanggan / User Profile
+Route::get('/profile', function () {
+    return view('profile.index');
+})->middleware(['auth'])->name('profile.index');
+
+// Route Authentikasi (Login, Register, Logout)
+require __DIR__.'/auth.php';

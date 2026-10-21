@@ -57,3 +57,52 @@ If you discover a security vulnerability within Laravel, please send an e-mail t
 ## License
 
 The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+
+## REST API Books
+
+API ini mengikuti latihan REST API Laravel dan menyediakan operasi CRUD untuk data buku.
+
+### Menjalankan
+
+1. Pastikan konfigurasi database di `.env` sudah benar.
+2. Jalankan migrasi untuk membuat tabel `books`:
+
+   ```powershell
+   php artisan migrate
+   ```
+
+3. Jalankan server lokal:
+
+   ```powershell
+   php artisan serve
+   ```
+
+4. Daftar endpoint dapat diperiksa dengan `php artisan route:list --path=api`.
+
+### Endpoint
+
+| Method | URL | Fungsi |
+| --- | --- | --- |
+| GET | `/api/books` | Mengambil semua buku |
+| POST | `/api/books` | Menambahkan buku |
+| GET | `/api/books/{id}` | Mengambil satu buku |
+| PUT/PATCH | `/api/books/{id}` | Mengubah buku (PUT semua field; PATCH sebagian) |
+| DELETE | `/api/books/{id}` | Menghapus buku |
+
+Contoh body JSON untuk POST atau PUT:
+
+```json
+{
+  "title": "Laravel REST API",
+  "description": "Panduan membuat REST API dengan Laravel",
+  "status": 1
+}
+```
+
+Field `title`, `description`, dan `status` wajib diisi saat membuat atau mengganti buku. `status` berupa bilangan bulat nol atau lebih. PATCH hanya memvalidasi field yang dikirim. API membalas `201` saat membuat, `200` saat membaca/mengubah/menghapus, `422` untuk input tidak valid, dan `404` jika ID buku tidak ditemukan.
+
+Pengujian API:
+
+```powershell
+php artisan test tests/Feature/BookApiTest.php
+```

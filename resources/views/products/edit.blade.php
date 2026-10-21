@@ -19,7 +19,7 @@
                         </div>
                     @endif
 
-                    <form action="{{ route('products.update', $product->id) }}" method="POST">
+                    <form action="{{ route('admin.products.update', $product->id) }}" method="POST">
                         @csrf
                         @method('PUT')
 
@@ -52,13 +52,13 @@
                         <div class="mb-4">
                             <label class="form-label fw-bold">Status</label>
                             <select name="status" class="form-select" required>
-                                <option value="Aktif" {{ old('status', $product->status) == 'Aktif' ? 'selected' : '' }}>Aktif</option>
-                                <option value="Nonaktif" {{ old('status', $product->status) == 'Nonaktif' ? 'selected' : '' }}>Nonaktif</option>
+                                <option value="Aktif" {{ old('status', $product->is_active ? 'Aktif' : 'Nonaktif') == 'Aktif' ? 'selected' : '' }}>Aktif</option>
+                                <option value="Nonaktif" {{ old('status', $product->is_active ? 'Aktif' : 'Nonaktif') == 'Nonaktif' ? 'selected' : '' }}>Nonaktif</option>
                             </select>
                         </div>
 
                         <div class="d-flex justify-content-end gap-2">
-                            <a href="{{ route('products.index') }}" class="btn btn-secondary">Batal</a>
+                            <a href="{{ route('admin.products.index') }}" class="btn btn-secondary">Batal</a>
                             <button type="submit" class="btn btn-warning text-white">Update Product</button>
                         </div>
                     </form>
