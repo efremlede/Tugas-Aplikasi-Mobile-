@@ -4,36 +4,78 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Book;
-use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class BookController extends Controller
 {
-    public function index(): JsonResponse
+    /**
+     * Display a listing of the resource.
+     */
+    public function index()
     {
-        return response()->json(Book::query()->get());
+        $books = Book::all();
+        return response()->json($books, 200);
     }
 
-    public function store(Request $request): JsonResponse
+    /**
+     * Store a newly created resource in storage.
+     */
+    public function store(Request $request)
     {
         $data = $request->validate([
-            'judul' => ['required', 'string', 'max:255'],
-            'deskripsi' => ['nullable', 'string'],
-            'status' => ['nullable', 'integer', 'min:0'],
+            'title'       => 'required',
+            'description' => 'required',
+            'status'      => 'required',
         ]);
 
-        $book = Book::query()->create($data);
+        $book = Book::create($data);
 
         return response()->json($book, 201);
     }
 
-    public function show(string $id): JsonResponse
+    /**
+     * Display the specified resource.
+     */
+    public function show(string $id)
     {
-        return response()->json(Book::query()->findOrFail($id));
+        $book = Book::find($id);
+
+        if (!$book) {
+            return response()->json(['message' => 'Book not found'], 404);
+        }
+
+        return response()->json($book, 200);
     }
 
-    public function update(Request $request, string $id): JsonResponse
+    /**
+     * Update the specified resource in storage.
+     */
+    public function update(Request $request, string $id)
     {
-        // Tambahkan logika update jika diperlukan sesuai dengan kelanjutan project Anda
+        $book = Book::find($id);
+
+        if (!$book) {
+            return response()->json(['message' => 'Book not found'], 404);
+        }
+
+        $book->update($request->all());
+
+        return response()->json($book, 200);
+    }
+
+    /**
+     * Remove the specified resource from storage.
+     */
+    public function destroy(string $id)
+    {
+        $book = Book::find($id);
+
+        if (!$book) {
+            return response()->json(['message' => 'Book not found'], 404);
+        }
+
+        $book->delete();
+
+        return response()->json(['message' => 'Book deleted'], 200);
     }
 }
