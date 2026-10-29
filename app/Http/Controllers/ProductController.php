@@ -4,21 +4,39 @@ namespace App\Http\Controllers;
 
 use App\Models\Product;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
+use Intervention\Image\ImageManager;
+use Intervention\Image\Drivers\Gd\Driver;
 
 class ProductController extends Controller
 {
     /**
-     * Menampilkan daftar produk di halaman Admin / Katalog
+     * Menampilkan daftar produk dengan fitur pencarian dan paginasi.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $products = Product::all();
+        $validated = $request->validate([
+            'search' => ['nullable', 'string', 'max:100'],
+        ]);
+
+        $search = trim($validated['search'] ?? '');
+
+        $products = Product::query()
+            ->when($search !== '', function ($query) use ($search) {
+                $query->where(function ($query) use ($search) {
+                    $query->where('name', 'like', "%{$search}%")
+                        ->orWhere('category_id', 'like', "%{$search}%")
+                        ->orWhere('description', 'like', "%{$search}%");
+                });
+            })
+            ->latest()
+            ->paginate(10);
 
         return view('products.index', compact('products'));
     }
 
     /**
-     * Menampilkan halaman form tambah produk.
+     * Menampilkan form tambah product.
      */
     public function create()
     {
@@ -26,124 +44,49 @@ class ProductController extends Controller
     }
 
     /**
-     * Simpan produk baru.
+     * Menyimpan product baru dengan manipulasi gambar yang benar.
      */
     public function store(Request $request)
     {
-        $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'category' => ['required', 'string', 'max:255'],
-            'description' => ['required', 'string'],
-            'price' => ['required', 'numeric', 'min:0'],
-            'stock' => ['required', 'integer', 'min:0'],
-            'status' => ['required', 'in:Aktif,Nonaktif'],
+        $data = $request->validate([
+            'name'        => 'required|string|max:255',
+            'category_id' => 'nullable|exists:categories,id',
+            'sku'         => 'required|string|max:100|unique:products,sku',
+            'price'       => 'required|numeric',
+            'stock'       => 'required|integer',
+            'description' => 'nullable|string',
+            'image'       => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048', // max 2MB
+            'is_active'   => 'nullable|boolean',
         ]);
 
-        Product::create([
-            'name' => $validated['name'],
-            'category' => $validated['category'],
-            'description' => $validated['description'],
-            'price' => $validated['price'],
-            'stock' => $validated['stock'],
-            'is_active' => $validated['status'] === 'Aktif',
-        ]);
+        $file = $request->file('image');
 
-        return redirect()->route('admin.products.index')->with('success', 'Produk berhasil ditambahkan.');
-    }
+        // Jika ada file unggahan, proses gambar. Jika tidak, lanjutkan tanpa gambar.
+        if ($file) {
+            $original = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
+            $ext = strtolower($file->getClientOriginalExtension());
+            $filename = time() . '_' . preg_replace('/[^A-Za-z0-9\-]/', '_', $original) . '.' . $ext;
+            $folder = 'products';
+            $path = $folder . '/' . $filename;
 
-    /**
-     * Tampilkan detail produk.
-     */
-    public function show(Product $product)
-    {
-        return view('products.show', compact('product'));
-    }
+            // Manipulasi gambar menggunakan Intervention Image v3
+            $manager = new ImageManager(new Driver());
+            $image = $manager->read($file);
 
-    /**
-     * Menampilkan form edit produk.
-     */
-    public function edit(Product $product)
-    {
-        return view('products.edit', compact('product'));
-    }
+            // Resize proporsional max width 800px
+            $image->scale(width: 800);
 
-    /**
-     * Update produk.
-     */
-    public function update(Request $request, Product $product)
-    {
-        $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'category' => ['required', 'string', 'max:255'],
-            'description' => ['required', 'string'],
-            'price' => ['required', 'numeric', 'min:0'],
-            'stock' => ['required', 'integer', 'min:0'],
-            'status' => ['required', 'in:Aktif,Nonaktif'],
-        ]);
+            // Encode gambar ke format webp/jpeg
+            $encoded = $image->toWebp(80);
 
-        $product->update([
-            'name' => $validated['name'],
-            'category' => $validated['category'],
-            'description' => $validated['description'],
-            'price' => $validated['price'],
-            'stock' => $validated['stock'],
-            'is_active' => $validated['status'] === 'Aktif',
-        ]);
+            // Simpan ke disk public
+            Storage::disk('public')->put($path, $encoded->toString());
 
-        return redirect()->route('admin.products.index')->with('success', 'Produk berhasil diperbarui.');
-    }
-
-    /**
-     * Hapus produk.
-     */
-    public function destroy(Product $product)
-    {
-        $product->delete();
-
-        return redirect()->route('admin.products.index')->with('success', 'Produk berhasil dihapus.');
-    }
-
-    /**
-     * Menambahkan produk ke Keranjang (Session)
-     */
-    public function addToCart(Request $request)
-    {
-        $productId = $request->input('product_id');
-        $product = Product::findOrFail($productId);
-
-        $cart = session()->get('cart', []);
-
-        if (isset($cart[$productId])) {
-            $cart[$productId]['quantity']++;
-        } else {
-            $cart[$productId] = [
-                'name' => $product->name,
-                'quantity' => 1,
-                'price' => $product->price,
-                'category' => $product->category,
-            ];
+            $data['image'] = $path;
         }
 
-        session()->put('cart', $cart);
+        Product::create($data);
 
-        return redirect()->back()->with('success', 'Produk berhasil ditambahkan ke keranjang!');
-    }
-
-    /**
-     * Fitur Beli Sekarang (Langsung mengarahkan ke halaman Checkout)
-     */
-    public function buyNow(Request $request)
-    {
-        $productId = $request->input('product_id');
-        $product = Product::findOrFail($productId);
-
-        session()->put('direct_checkout', [
-            'product_id' => $product->id,
-            'name' => $product->name,
-            'price' => $product->price,
-            'quantity' => 1,
-        ]);
-
-        return redirect()->route('checkout.direct');
+        return redirect()->route('admin.products.index')->with('success', 'Produk berhasil ditambahkan!');
     }
 }

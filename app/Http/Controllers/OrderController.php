@@ -3,65 +3,36 @@
 namespace App\Http\Controllers;
 
 use App\Models\Order;
-use App\Models\OrderItem;
-use App\Models\Product;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class OrderController extends Controller
 {
-    public function store(Request $request)
+    /**
+     * Tampilkan dan cetak PDF Invoice berdasarkan Order ID
+     */
+    public function invoice(Order $order)
     {
-        $request->validate([
-            'customer_name' => 'required',
-            'phone' => 'required',
-            'address' => 'required',
-            'city' => 'required',
-            'payment_method' => 'required',
-        ]);
+        // 1. Ambil data order beserta relasi items dan product
+        $order = Order::with('items.product')->findOrFail($order->id);
 
-        $cart = session()->get('cart', []);
-
-        if (empty($cart)) {
-            return redirect('/cart')->with('error', 'Keranjang masih kosong.');
+        // 2. Normalisasi total per item dan total akhir
+        $invoice = $order;
+        foreach ($invoice->items as $item) {
+            if (!isset($item->total)) {
+                $item->total = $item->subtotal ?? ($item->quantity * $item->price);
+            }
         }
 
-        DB::transaction(function () use ($request, $cart) {
+        if (!isset($invoice->total)) {
+            $invoice->total = $invoice->total_price ?? $invoice->items->sum('total');
+        }
 
-            $total = 0;
+        // 3. Render ke PDF dengan ukuran A4
+        $pdf = Pdf::loadView('invoices.invoice', compact('invoice'));
+        $pdf->setPaper('a4', 'portrait');
 
-            foreach ($cart as $item) {
-                $total += $item['price'] * $item['quantity'];
-            }
-
-            $order = Order::create([
-                'user_id' => auth()->id(),
-                'customer_name' => $request->customer_name,
-                'phone' => $request->phone,
-                'address' => $request->address,
-                'city' => $request->city,
-                'total_price' => $total,
-                'payment_method' => $request->payment_method,
-                'status' => 'Menunggu pembayaran',
-            ]);
-
-            foreach ($cart as $productId => $item) {
-
-                OrderItem::create([
-                    'order_id' => $order->id,
-                    'product_id' => $productId,
-                    'quantity' => $item['quantity'],
-                    'price' => $item['price'],
-                    'subtotal' => $item['price'] * $item['quantity'],
-                ]);
-            }
-        });
-
-        session()->forget('cart');
-
-        return redirect('/')->with(
-            'success',
-            'Pesanan berhasil dibuat.'
-        );
+        // 4. Langsung tampilkan preview PDF di browser (gunakan download() jika ingin mengunduh otomatis)
+        return $pdf->stream('Invoice-' . $invoice->id . '.pdf');
     }
 }

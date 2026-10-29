@@ -2,33 +2,44 @@
 
 namespace App\Http\Controllers;
 
+use App\Contracts\ReceiptPrinter;
+use App\Models\Sale;
+use App\Models\StoreSetting;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
+use Throwable;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class StrukController extends Controller
 {
-    public function struk()
+    /**
+     * Fungsi dari Gambar 1 (Generate PDF Invoice)
+     * Sudah disesuaikan menggunakan model Sale agar klop dengan proyek Anda.
+     */
+    public function invoice(Sale $sale)
     {
-        $items = [
-            ['name' => 'Semen Gresik 50kg', 'qty' => 5, 'price' => 65000],
-            ['name' => 'Semen Tiga Roda 40kg', 'qty' => 2, 'price' => 58000],
-            ['name' => 'Paku 7cm (Kg)', 'qty' => 1, 'price' => 20000],
-        ];
+        // Mengambil data sale beserta item dan produknya (disesuaikan dengan relasi Laravel Anda)
+        $sale = Sale::with('items.product')->findOrFail($sale->id);
 
-        $grandTotal = 0;
-        foreach ($items as $item) {
-            $grandTotal += $item['qty'] * $item['price'];
+        // Menyamakan variabel ke $invoice seperti pada instruksi gambar 1
+        $invoice = $sale;
+
+        foreach ($invoice->items as $item) {
+            // memastikan field 'total' ada pada tiap item
+            if (!isset($item->total)) {
+                $item->total = $item->subtotal ?? ($item->price * $item->quantity);
+            }
         }
 
-        $bayar = 500000;
-        $kembalian = $bayar - $grandTotal;
+        // Sesuaikan grand total dari database proyek Anda (biasanya total_amount atau grand_total)
+        $invoice->total = $invoice->total_amount ?? $invoice->total ?? 0;
 
-        return view('struk', [
-            'no_trx' => 'TRX-' . date('YmdHis'),
-            'tanggal' => date('d-m-Y H:i'),
-            'items' => $items,
-            'grandTotal' => $grandTotal,
-            'bayar' => $bayar,
-            'kembalian' => $kembalian,
-        ]);
+        // Load view template HTML invoice (Pastikan file blade ditaruh di resources/views/invoices/invoice.blade.php)
+        $pdf = Pdf::loadView('invoices.invoice', ['invoice' => $invoice]);
+
+        // Download otomatis file PDF-nya
+        return $pdf->download('invoice_' . $invoice->id . '.pdf');
     }
 }
