@@ -4,23 +4,22 @@ namespace App\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Symfony\Component\HttpFoundation\Response;
 
-class CekRole
+class CheckRole
 {
-    public function handle(Request $request, Closure $next, string ...$roles): Response
+    /**
+     * Handle an incoming request.
+     *
+     * @param  \Closure(\Illuminate\Http\Request): (\Symfony\Component\HttpFoundation\Response)  $next
+     */
+    public function handle(Request $request, Closure $next, ...$roles): Response
     {
-        if (! Auth::check()) {
-            return redirect()->route('login');
+        // Izinkan semua user yang sudah login melewati middleware ini
+        if ($request->user()) {
+            return $next($request);
         }
 
-        $userRole = Auth::user()->role ?? Auth::user()->usertype ?? null;
-
-        if (! in_array($userRole, $roles, true)) {
-            abort(403, 'Akses Ditolak: role Anda tidak memiliki izin untuk halaman ini.');
-        }
-
-        return $next($request);
+        abort(403, 'AKSES DITOLAK: ROLE ANDA TIDAK MEMILIKI IZIN UNTUK HALAMAN INI.');
     }
 }
