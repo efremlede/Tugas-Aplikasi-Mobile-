@@ -1,456 +1,211 @@
-<!DOCTYPE html>
-<html lang="id">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Transaksi Baru - Toko Semen Jaya</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>
-        :root {
-            --primary-red: #8B1E21;
-            --primary-red-hover: #6F171A;
-            --sidebar-width: 240px;
-        }
+@extends('layouts.app')
 
-        body {
-            background-color: #f4f5f7;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
+@section('content')
+<div class="container-fluid p-4" style="background-color: #f1f5f9; min-height: 100vh;">
+    <div class="row">
+        <!-- Kolom Kiri: Input & Keranjang Belanja -->
+        <div class="col-md-8">
+            <h3 class="fw-bold text-dark mb-1">Transaksi Baru</h3>
+            <p class="text-muted mb-4">Masukkan produk ke keranjang, lalu lanjutkan ke pembayaran</p>
 
-        /* Sidebar Navigation */
-        .sidebar {
-            width: var(--sidebar-width);
-            background-color: var(--primary-red);
-            min-height: 100vh;
-            color: #fff;
-            position: fixed;
-            top: 0;
-            left: 0;
-            z-index: 100;
-        }
-
-        .sidebar .brand {
-            padding: 20px 15px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        .sidebar .menu-label {
-            font-size: 0.75rem;
-            color: rgba(255, 255, 255, 0.5);
-            padding: 15px 20px 5px;
-            text-transform: uppercase;
-            font-weight: 600;
-        }
-
-        .sidebar .nav-link {
-            color: rgba(255, 255, 255, 0.8);
-            padding: 12px 20px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            font-weight: 500;
-            text-decoration: none;
-            transition: all 0.2s;
-        }
-
-        .sidebar .nav-link:hover, .sidebar .nav-link.active {
-            color: #fff;
-            background-color: rgba(0, 0, 0, 0.2);
-            border-left: 4px solid #fff;
-        }
-
-        /* Main Content Layout */
-        .main-content {
-            margin-left: var(--sidebar-width);
-            padding: 20px 30px;
-        }
-
-        .top-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background-color: var(--primary-red);
-            color: #fff;
-            padding: 10px 20px;
-            margin: -20px -30px 20px -30px;
-        }
-
-        .card-custom {
-            border: none;
-            border-radius: 8px;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.05);
-            background-color: #fff;
-        }
-
-        .btn-red {
-            background-color: var(--primary-red);
-            color: #fff;
-            border: none;
-        }
-
-        .btn-red:hover {
-            background-color: var(--primary-red-hover);
-            color: #fff;
-        }
-
-        .payment-btn {
-            border: 1px solid #dee2e6;
-            background-color: #f8f9fa;
-            color: #333;
-        }
-
-        .payment-btn.active {
-            background-color: var(--primary-red);
-            color: #fff;
-            border-color: var(--primary-red);
-        }
-
-        /* Modal Customization */
-        .modal-success-icon {
-            width: 60px;
-            height: 60px;
-            background-color: #FDF2F2;
-            color: var(--primary-red);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 28px;
-            margin: 0 auto 15px;
-        }
-    </style>
-</head>
-<body>
-
-    <!-- Sidebar Menus -->
-    <div class="sidebar">
-        <div class="brand">
-            <h5 class="fw-bold m-0"><i class="fa-solid fa-store me-2"></i>Toko Semen Jaya</h5>
-            <small class="text-white-50">Sistem Informasi Kasir</small>
-        </div>
-
-        <div class="menu-label">Menu Kasir</div>
-        <a href="{{ route('cashier.index') }}" class="nav-link active">
-            <i class="fa-solid fa-cart-shopping"></i> Transaksi Baru
-        </a>
-        <a href="{{ route('cashier.pelanggan') }}" class="nav-link">
-            <i class="fa-solid fa-id-card"></i> Member NFC
-        </a>
-        <a href="{{ route('admin.products.index') }}" class="nav-link">
-            <i class="fa-solid fa-boxes-stacked"></i> Daftar Produk
-        </a>
-        <a href="{{ route('cashier.riwayat') }}" class="nav-link">
-            <i class="fa-solid fa-clock-rotate-left"></i> Riwayat Transaksi
-        </a>
-        <a href="#" class="nav-link">
-            <i class="fa-solid fa-chart-line"></i> Laporan
-        </a>
-    </div>
-
-    <!-- Main Content -->
-    <div class="main-content">
-        <!-- Top Navbar -->
-        <div class="top-header">
-            <div><strong>Toko Semen Jaya</strong></div>
-            <div class="d-flex align-items-center gap-3">
-                <span class="badge bg-light text-dark"><i class="fa-solid fa-user me-1"></i> {{ auth()->user()->name ?? 'Kasir 1' }}</span>
-                <form method="POST" action="{{ route('logout') }}" class="d-inline">
-                    @csrf
-                    <button type="submit" class="btn btn-outline-light btn-sm">
-                        <i class="fa-solid fa-right-from-bracket me-1"></i> Keluar
-                    </button>
-                </form>
-            </div>
-        </div>
-
-        <!-- Header Title -->
-        <div class="d-flex justify-content-between align-items-start mb-3">
-            <div>
-                <h4 class="fw-bold m-0">Transaksi Baru</h4>
-                <small class="text-muted">Masukkan barang ke keranjang, lalu lanjutkan pembayaran.</small>
-            </div>
-            <div class="text-end">
-                <small class="text-muted d-block">No. Transaksi</small>
-                <strong id="trx-no">TRX-{{ date('Ymd') }}-{{ rand(100, 999) }}</strong><br>
-                <small class="text-muted">{{ date('d/m/Y, H:i') }} WIB</small>
-            </div>
-        </div>
-
-        <div class="row g-3">
-            <!-- Left Area: Search & Cart Table -->
-            <div class="col-lg-8">
-                <div class="card card-custom p-3 mb-3">
-                    <label class="form-label fw-semibold">Tambah Barang</label>
-                    <div class="input-group">
-                        <span class="input-group-text bg-light border-end-0"><i class="fa-solid fa-magnifying-glass"></i></span>
-                        <input type="text" id="search_product" class="form-control border-start-0" placeholder="Cari nama barang / kategori / scan barcode..." autofocus>
-                        <button class="btn btn-red px-4" type="button" id="btn-search">Cari Barang</button>
-                    </div>
-                </div>
-
-                <div class="card card-custom p-3">
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h6 class="fw-bold m-0">Keranjang Belanja</h6>
-                        <span class="badge bg-light text-dark border" id="item-count">0 Item</span>
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-body">
+                    <label class="fw-semibold mb-2 text-secondary">Scan Barcode Produk Semen</label>
+                    <div class="input-group mb-3">
+                        <span class="input-group-text bg-white border-end-0"><i class="bi bi-qr-code-scan text-muted"></i></span>
+                        <input type="text" id="barcode-input" class="form-control border-start-0" placeholder="Scan barcode lalu tekan Enter">
                     </div>
 
-                    <div class="table-responsive">
-                        <table class="table align-middle">
-                            <thead class="table-light">
-                                <tr>
-                                    <th style="width: 50px;">NO</th>
-                                    <th>BARANG</th>
-                                    <th class="text-end">HARGA</th>
-                                    <th class="text-center" style="width: 100px;">QTY</th>
-                                    <th class="text-end">SUBTOTAL</th>
-                                    <th class="text-center" style="width: 50px;"></th>
-                                </tr>
-                            </thead>
-                            <tbody id="cart-table-body">
-                                <tr>
-                                    <td colspan="6" class="text-center py-5 text-muted">
-                                        Keranjang belanja masih kosong.<br>Silakan cari barang di atas.
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <input type="text" id="search-input" class="form-control me-2" placeholder="Cari jenis semen, sak, atau paket...">
+                        <button class="btn text-white px-4 fw-bold" style="background-color: #dc2626;">Cari Barang</button>
                     </div>
                 </div>
             </div>
 
-            <!-- Right Area: Payment Summary -->
-            <div class="col-lg-4">
-                <div class="card card-custom p-3">
-                    <h6 class="fw-bold mb-3">Ringkasan Pembayaran</h6>
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <h5 class="fw-bold mb-3 text-dark">Keranjang Belanja</h5>
+                    <table class="table align-middle">
+                        <thead style="background-color: #e2e8f0;">
+                            <tr>
+                                <th class="text-secondary">NO</th>
+                                <th class="text-secondary">BARANG</th>
+                                <th class="text-secondary">HARGA</th>
+                                <th class="text-center text-secondary">QTY</th>
+                                <th class="text-end text-secondary">ACTION</th>
+                            </tr>
+                        </thead>
+                        <tbody id="cart-table-body">
+                            <!-- Contoh item default -->
+                            <tr>
+                                <td>1</td>
+                                <td><strong>Semen Gresik 50kg</strong><br><small class="text-muted">Bahan Bangunan</small></td>
+                                <td>Rp 65.000</td>
+                                <td class="text-center">2</td>
+                                <td class="text-end"><button class="btn btn-sm btn-outline-danger">x</button></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
 
+        <!-- Kolom Kanan: Ringkasan Pembayaran -->
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <h5 class="fw-bold mb-3 text-dark">Ringkasan Pembayaran</h5>
+                    
                     <div class="d-flex justify-content-between mb-2">
                         <span class="text-muted">Total Item</span>
-                        <strong id="summary-items">0</strong>
+                        <span id="summary-total-item" class="fw-bold">2 Sak</span>
                     </div>
                     <div class="d-flex justify-content-between mb-2">
                         <span class="text-muted">Subtotal</span>
-                        <strong id="summary-subtotal">Rp 0</strong>
+                        <span id="summary-subtotal" class="fw-bold">Rp 130.000</span>
                     </div>
+                    <hr style="border-top: 2px dashed #cbd5e1;">
                     <div class="d-flex justify-content-between align-items-center mb-3">
-                        <span class="text-muted">Biaya Lain</span>
-                        <input type="number" class="form-control form-control-sm text-end" style="width: 90px;" value="0">
-                    </div>
-
-                    <div class="p-3 bg-light rounded mb-3">
-                        <small class="text-muted d-block fw-semibold">TOTAL AKHIR</small>
-                        <h2 class="fw-bold text-danger m-0" id="summary-grand-total">Rp 0</h2>
+                        <span class="fw-bold text-uppercase fs-6 text-secondary">TOTAL AKHIR</span>
+                        <span id="summary-total-akhir" class="fw-bold fs-3" style="color: #dc2626;">Rp 130.000</span>
                     </div>
 
                     <div class="mb-3">
                         <label class="form-label text-muted small fw-semibold">Pelanggan</label>
-                        <select class="form-select form-select-sm">
-                            <option selected>Pelanggan umum</option>
+                        <select class="form-select" id="customer-select">
+                            <option value="umum">Pelanggan Umum / Kontraktor</option>
                         </select>
                     </div>
 
                     <div class="mb-3">
                         <label class="form-label text-muted small fw-semibold">Uang Dibayar</label>
-                        <input type="number" id="pay-amount" class="form-control form-control-lg text-end fw-bold" placeholder="0">
+                        <input type="number" id="input-cash" class="form-control form-control-lg text-end fw-bold" placeholder="150000" oninput="calculateChange()">
                     </div>
 
-                    <label class="form-label text-muted small fw-semibold">Metode Pembayaran</label>
-                    <div class="row g-2 mb-3">
-                        <div class="col-6"><button class="btn payment-btn w-100 btn-sm active" data-method="tunai">Tunai</button></div>
-                        <div class="col-6"><button class="btn payment-btn w-100 btn-sm" data-method="qris">QRIS</button></div>
-                        <div class="col-6"><button class="btn payment-btn w-100 btn-sm" data-method="transfer">Transfer</button></div>
-                        <div class="col-6"><button class="btn payment-btn w-100 btn-sm" data-method="nfc">Tap NFC</button></div>
+                    <div class="p-3 mb-3 rounded" style="background-color: #f0fdf4; border: 1px solid #bbf7d0;">
+                        <small class="text-success fw-bold d-block mb-1">KEMBALIAN</small>
+                        <h4 id="text-change" class="fw-bold text-success mb-0">Rp 20.000</h4>
                     </div>
 
-                    <div class="mb-3">
-                        <small class="text-muted d-block fw-semibold">KEMBALIAN</small>
-                        <h4 class="fw-bold text-success m-0" id="summary-change">Rp 0</h4>
-                    </div>
-
-                    <div class="row g-2 mb-2">
-                        <div class="col-6"><button class="btn btn-warning w-100 fw-bold text-dark">Tahan</button></div>
-                        <div class="col-6"><button class="btn btn-danger w-100 fw-bold" onclick="resetCart()">Batal</button></div>
-                    </div>
-
-                    <button class="btn btn-success btn-lg w-100 fw-bold" id="btn-pay">BAYAR & CETAK</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal Pop-up "Pembayaran Berhasil" (Sesuai Contoh Gambar) -->
-    <div class="modal fade" id="paymentSuccessModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
-        <div class="modal-dialog modal-dialog-centered" style="max-width: 420px;">
-            <div class="modal-content border-0 shadow-lg rounded-4 p-3">
-                <div class="modal-header border-0 pb-0">
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body text-center pt-0">
-                    <div class="modal-success-icon">
-                        <i class="fa-solid fa-receipt"></i>
-                    </div>
-
-                    <h4 class="fw-bold mb-2">Pembayaran Berhasil</h4>
-                    <p class="text-muted small mb-4">Transaksi sudah tersimpan. Apakah Anda ingin mencetak struk untuk pelanggan?</p>
-
-                    <div class="bg-light p-3 rounded-3 text-start mb-4">
-                        <div class="d-flex justify-content-between mb-2">
-                            <span class="text-muted small">No. Invoice</span>
-                            <strong class="small" id="modal-invoice">INV-{{ date('Ymd') }}-001</strong>
-                        </div>
-                        <div class="d-flex justify-content-between mb-2">
-                            <span class="fw-bold">Total belanja</span>
-                            <strong class="fw-bold text-danger" id="modal-total">Rp 0</strong>
-                        </div>
-                        <div class="d-flex justify-content-between">
-                            <span class="text-muted small">Kembalian</span>
-                            <strong class="small" id="modal-change">Rp 0</strong>
-                        </div>
-                    </div>
-
-                    <div class="d-flex gap-2">
-                        <button type="button" class="btn btn-danger w-50 py-2 fw-semibold" data-bs-dismiss="modal">
-                            Selesai Tanpa Cetak
-                        </button>
-                        <button type="button" class="btn btn-red w-50 py-2 fw-semibold" id="btn-print-receipt">
-                            <i class="fa-solid fa-print me-1"></i> Cetak Struk
+                    <div class="d-grid gap-2">
+                        <button class="btn btn-lg text-white fw-bold py-3 shadow-sm" style="background-color: #16a34a;" onclick="openConfirmModal()">
+                            <i class="bi bi-printer me-2"></i>BAYAR & CETAK
                         </button>
                     </div>
                 </div>
             </div>
         </div>
     </div>
+</div>
 
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-        let cart = [];
-        let currentSaleId = 1;
+<!-- MODAL 1: Konfirmasi Pembayaran -->
+<div class="modal fade" id="modalConfirm" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content text-center p-4 rounded-4 border-0">
+            <div class="mx-auto mb-3 d-flex align-items-center justify-content-center rounded-circle" style="width: 60px; height: 60px; background-color: #fef2f2; color: #dc2626;">
+                <i class="bi bi-bag-check fs-2"></i>
+            </div>
+            <h4 class="fw-bold text-dark">Konfirmasi Pembayaran</h4>
+            <p class="text-muted small">Pastikan jumlah pembayaran semen sudah sesuai sebelum disimpan.</p>
+            
+            <div class="p-3 rounded-3 text-start mb-4" style="background-color: #f8fafc; border: 1px solid #e2e8f0;">
+                <div class="d-flex justify-content-between mb-2">
+                    <span class="text-muted">Jumlah Item</span>
+                    <span id="confirm-items" class="fw-bold">2 item</span>
+                </div>
+                <div class="d-flex justify-content-between mb-2">
+                    <span class="text-muted">Total Belanja</span>
+                    <span id="confirm-total" class="fw-bold" style="color: #dc2626;">Rp 130.000</span>
+                </div>
+                <div class="d-flex justify-content-between mb-2">
+                    <span class="text-muted">Uang Dibayar</span>
+                    <span id="confirm-pay" class="fw-bold">Rp 150.000</span>
+                </div>
+                <div class="d-flex justify-content-between">
+                    <span class="text-muted">Kembalian</span>
+                    <span id="confirm-change" class="fw-bold text-success">Rp 20.000</span>
+                </div>
+            </div>
 
-        // Simulasi Tambah Produk ke Keranjang saat Enter di Input Pencarian
-        $('#search_product').on('keypress', function(e) {
-            if (e.which === 13) {
-                e.preventDefault();
-                let name = $(this).val().trim();
-                if (name === '') name = 'Semen Tiga Roda 50kg';
+            <div class="d-flex gap-2">
+                <button class="btn text-white w-50 py-2 fw-semibold" data-bs-dismiss="modal" style="background-color: #64748b;">Periksa Lagi</button>
+                <button class="btn text-white w-50 py-2 fw-semibold" style="background-color: #dc2626;" onclick="submitTransaction()">Konfirmasi & Bayar</button>
+            </div>
+        </div>
+    </div>
+</div>
 
-                cart.push({
-                    id: cart.length + 1,
-                    name: name,
-                    category: 'Semen',
-                    price: 65000,
-                    qty: 1
-                });
+<!-- MODAL 2: Pembayaran Berhasil -->
+<div class="modal fade" id="modalSuccess" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content text-center p-4 rounded-4 border-0">
+            <div class="mx-auto mb-3 d-flex align-items-center justify-content-center rounded-circle" style="width: 60px; height: 60px; background-color: #fef2f2; color: #dc2626;">
+                <i class="bi bi-receipt fs-2"></i>
+            </div>
+            <h4 class="fw-bold text-dark">Pembayaran Berhasil</h4>
+            <p class="text-muted small">Transaksi Toko Semen Jaya telah disimpan. Cetak struk untuk pembeli?</p>
+            
+            <div class="p-3 rounded-3 text-start mb-4" style="background-color: #f8fafc; border: 1px solid #e2e8f0;">
+                <div class="d-flex justify-content-between mb-2">
+                    <span class="text-muted">No. Invoice</span>
+                    <span id="success-invoice" class="fw-bold text-dark">INV-20261106-001</span>
+                </div>
+                <div class="d-flex justify-content-between mb-2">
+                    <span class="text-muted">Total Belanja</span>
+                    <span id="success-total" class="fw-bold" style="color: #dc2626;">Rp 130.000</span>
+                </div>
+                <div class="d-flex justify-content-between">
+                    <span class="text-muted">Kembalian</span>
+                    <span id="success-change" class="fw-bold text-success">Rp 20.000</span>
+                </div>
+            </div>
 
-                $(this).val('');
-                renderCart();
-            }
-        });
+            <div class="d-flex gap-2">
+                <button class="btn text-white w-50 py-2 fw-semibold" style="background-color: #64748b;" onclick="window.location.reload()">Selesai Tanpa Cetak</button>
+                <button class="btn text-white w-50 py-2 fw-semibold" style="background-color: #dc2626;" onclick="triggerPrint()">Cetak Struk</button>
+            </div>
+        </div>
+    </div>
+</div>
 
-        function renderCart() {
-            let html = '';
-            let subtotal = 0;
+<script>
+    let currentTotal = 130000;
 
-            cart.forEach((item, index) => {
-                let itemSubtotal = item.price * item.qty;
-                subtotal += itemSubtotal;
+    function calculateChange() {
+        let cash = parseFloat(document.getElementById('input-cash').value) || 0;
+        let change = cash - currentTotal;
+        document.getElementById('text-change').innerText = 'Rp ' + (change > 0 ? change.toLocaleString('id-ID') : 0);
+    }
 
-                html += `
-                    <tr>
-                        <td>${index + 1}</td>
-                        <td>
-                            <strong class="d-block">${item.name}</strong>
-                            <small class="text-muted">${item.category}</small>
-                        </td>
-                        <td class="text-end">Rp ${item.price.toLocaleString('id-ID')}</td>
-                        <td class="text-center">
-                            <input type="number" class="form-control form-control-sm text-center" value="${item.qty}" min="1" onchange="updateQty(${index}, this.value)">
-                        </td>
-                        <td class="text-end fw-bold">Rp ${itemSubtotal.toLocaleString('id-ID')}</td>
-                        <td class="text-center">
-                            <button class="btn btn-sm text-danger" onclick="removeItem(${index})"><i class="fa-solid fa-xmark fs-5"></i></button>
-                        </td>
-                    </tr>
-                `;
-            });
+    function openConfirmModal() {
+        let cash = parseFloat(document.getElementById('input-cash').value) || 0;
+        let change = cash - currentTotal;
 
-            if (cart.length === 0) {
-                html = `<tr><td colspan="6" class="text-center py-5 text-muted">Keranjang belanja masih kosong.<br>Silakan cari barang di atas.</td></tr>`;
-            }
+        document.getElementById('confirm-items').innerText = '2 sak';
+        document.getElementById('confirm-total').innerText = 'Rp ' + currentTotal.toLocaleString('id-ID');
+        document.getElementById('confirm-pay').innerText = 'Rp ' + cash.toLocaleString('id-ID');
+        document.getElementById('confirm-change').innerText = 'Rp ' + (change > 0 ? change.toLocaleString('id-ID') : 0);
 
-            $('#cart-table-body').html(html);
-            $('#item-count').text(cart.length + ' Item');
-            $('#summary-items').text(cart.length);
+        new bootstrap.Modal(document.getElementById('modalConfirm')).show();
+    }
 
-            calculateTotal(subtotal);
-        }
+    function submitTransaction() {
+        bootstrap.Modal.getInstance(document.getElementById('modalConfirm')).hide();
 
-        function updateQty(index, val) {
-            cart[index].qty = Math.max(1, parseInt(val) || 1);
-            renderCart();
-        }
+        let cash = parseFloat(document.getElementById('input-cash').value) || 0;
+        let change = cash - currentTotal;
 
-        function removeItem(index) {
-            cart.splice(index, 1);
-            renderCart();
-        }
+        document.getElementById('success-invoice').innerText = 'INV-' + Math.floor(Math.random() * 899999 + 100000);
+        document.getElementById('success-total').innerText = 'Rp ' + currentTotal.toLocaleString('id-ID');
+        document.getElementById('success-change').innerText = 'Rp ' + (change > 0 ? change.toLocaleString('id-ID') : 0);
 
-        function resetCart() {
-            cart = [];
-            $('#pay-amount').val('');
-            renderCart();
-        }
+        new bootstrap.Modal(document.getElementById('modalSuccess')).show();
+    }
 
-        function calculateTotal(subtotalParam) {
-            let subtotal = subtotalParam !== undefined ? subtotalParam : cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
-            let payAmount = parseFloat($('#pay-amount').val()) || 0;
-            let change = Math.max(0, payAmount - subtotal);
-
-            $('#summary-subtotal').text('Rp ' + subtotal.toLocaleString('id-ID'));
-            $('#summary-grand-total').text('Rp ' + subtotal.toLocaleString('id-ID'));
-            $('#summary-change').text('Rp ' + change.toLocaleString('id-ID'));
-
-            return { subtotal, payAmount, change };
-        }
-
-        $('#pay-amount').on('input', function() {
-            calculateTotal();
-        });
-
-        // Klik Tombol BAYAR & CETAK -> Tampilkan Modal Pop-up
-        $('#btn-pay').on('click', function() {
-            if (cart.length === 0) {
-                alert('Keranjang belanja masih kosong!');
-                return;
-            }
-
-            let calc = calculateTotal();
-            if (calc.payAmount < calc.subtotal) {
-                alert('Uang pembayaran masih kurang!');
-                return;
-            }
-
-            // Set data ke modal
-            $('#modal-invoice').text('INV-' + new Date().toISOString().slice(0,10).replace(/-/g,'') + '-' + Math.floor(1000 + Math.random() * 9000));
-            $('#modal-total').text('Rp ' + calc.subtotal.toLocaleString('id-ID'));
-            $('#modal-change').text('Rp ' + calc.change.toLocaleString('id-ID'));
-
-            // Tampilkan Modal Bootstrap
-            var successModal = new bootstrap.Modal(document.getElementById('paymentSuccessModal'));
-            successModal.show();
-        });
-
-        // Action Tombol "Cetak Struk" pada Modal Pop-up
-        $('#btn-print-receipt').on('click', function() {
-            window.open('/kasir/riwayat/' + currentSaleId + '/struk', '_blank', 'width=400,height=600');
-            $('#paymentSuccessModal').modal('hide');
-            resetCart();
-        });
-
-        // Reset keranjang jika modal ditutup (Selesai Tanpa Cetak)
-        $('#paymentSuccessModal').on('hidden.bs.modal', function () {
-            resetCart();
-        });
-    </script>
-</body>
-</html>
+    function triggerPrint() {
+        window.open('/print-receipt', '_blank');
+        window.location.reload();
+    }
+</script>
+@endsection

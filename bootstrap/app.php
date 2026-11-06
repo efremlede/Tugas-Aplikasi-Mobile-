@@ -35,5 +35,20 @@ return Application::configure(basePath: dirname(__DIR__))
         // $middleware->append(LogAktivitas::class);
     })
     ->withExceptions(function (Exceptions $exceptions) {
-        // Penanganan exception kustom jika ada
+        $exceptions->render(function (HttpException $exception, Request $request) {
+            if (
+                $exception->getStatusCode() === 419
+                && $exception->getPrevious() instanceof TokenMismatchException
+                && $request->isMethod('POST')
+                && $request->is('login')
+                && ! $request->expectsJson()
+            ) {
+                return redirect()->route('login')->with(
+                    'status',
+                    'Sesi login telah berakhir. Silakan masuk kembali.'
+                );
+            }
+
+            return null;
+        });
     })->create();

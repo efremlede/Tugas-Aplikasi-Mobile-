@@ -7,6 +7,7 @@ use App\Http\Controllers\Cashier\NfcCustomerController;
 use App\Http\Controllers\Cashier\SaleController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\ReceiptController;
 use App\Http\Controllers\StrukController;
 use App\Models\Customer;
 use App\Models\Product;
@@ -42,7 +43,10 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/kasir/kartu/saldo', [SaleController::class, 'nfcBalance'])->name('cashier.nfc.balance');
     Route::post('/kasir/transaksi', [SaleController::class, 'store'])->name('cashier.checkout');
 
-    // Route Struk & Invoice (Diubah menjadi GET agar bisa dibuka via window.open)
+    // Route Cetak Struk ESC/POS (Tugas Acara 33)
+    Route::get('/print-receipt', [ReceiptController::class, 'print'])->name('receipt.print');
+
+    // Route Struk & Invoice
     Route::get('/kasir/riwayat/{sale}/struk', [StrukController::class, 'printReceipt'])->name('cashier.receipt.print');
     Route::post('/kasir/riwayat/{sale}/struk', [StrukController::class, 'printReceipt']);
     Route::get('/kasir/riwayat/{sale}/invoice', [StrukController::class, 'invoice'])->name('cashier.invoice.download');
@@ -65,7 +69,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/admin', function () {
         return redirect()->route('cashier.dashboard');
     })->name('admin.index');
-    
+
     Route::get('/admin/cashiers', [CashierController::class, 'index'])->name('admin.cashiers.index');
     Route::get('/admin/members', [MemberController::class, 'index'])->name('admin.members.index');
     Route::get('/admin/settings', [StoreSettingController::class, 'index'])->name('admin.settings.index');

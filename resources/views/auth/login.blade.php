@@ -25,6 +25,12 @@
         <div class="login-card">
             <h4 class="text-center mb-4 fw-bold">Login Toko Semen Jaya</h4>
 
+            @if (session('status'))
+                <div class="alert alert-info" role="status">
+                    {{ session('status') }}
+                </div>
+            @endif
+
             <!-- Notifikasi Error Login -->
             @if ($errors->any())
                 <div class="alert alert-danger">
