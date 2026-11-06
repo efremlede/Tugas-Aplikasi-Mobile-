@@ -144,7 +144,7 @@
         <div class="meta">
             <div>No. Transaksi: {{ $no_trx }}</div>
             <div>Tanggal: {{ $tanggal }}</div>
-            <div>Kasir: Admin</div>
+            <div>Kasir: {{ $kasir }}</div>
         </div>
 
         <table>
